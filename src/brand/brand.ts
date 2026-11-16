@@ -24,12 +24,12 @@ type Environment = Record<string, string | undefined>;
 /** Parse the BRAND_* variables; throws InvalidBrandError naming the offending variable. */
 export function readBrand(env: Environment = process.env): Brand {
   const parsed = BrandSchema.safeParse({
-    name: env.BRAND_NAME ?? "Morada Vale do Aço",
-    shortName: env.BRAND_SHORT_NAME ?? "Morada",
-    tagline: env.BRAND_TAGLINE ?? "Todos os aluguéis das imobiliárias da região em uma única busca.",
-    regionLabel: env.BRAND_REGION_LABEL ?? "Vale do Aço",
-    primaryColor: env.BRAND_PRIMARY_COLOR ?? "#0f4c45",
-    accentColor: env.BRAND_ACCENT_COLOR ?? "#c2772b",
+    name: blankToUndefined(env.BRAND_NAME) ?? "Morada Vale do Aço",
+    shortName: blankToUndefined(env.BRAND_SHORT_NAME) ?? "Morada",
+    tagline: blankToUndefined(env.BRAND_TAGLINE) ?? "Todos os aluguéis das imobiliárias da região em uma única busca.",
+    regionLabel: blankToUndefined(env.BRAND_REGION_LABEL) ?? "Vale do Aço",
+    primaryColor: blankToUndefined(env.BRAND_PRIMARY_COLOR) ?? "#0f4c45",
+    accentColor: blankToUndefined(env.BRAND_ACCENT_COLOR) ?? "#c2772b",
     logoUrl: blankToUndefined(env.BRAND_LOGO_URL),
     supportEmail: blankToUndefined(env.BRAND_SUPPORT_EMAIL),
   });
