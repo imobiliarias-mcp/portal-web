@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+:root {
+  --brand-primary: #0f4c45;
+  --brand-accent: #c2772b;
+  --background: oklch(0.985 0.006 85);
+  --foreground: oklch(0.22 0.015 170);
+  --muted: oklch(0.955 0.008 85);
+  --muted-foreground: oklch(0.48 0.015 170);
+  --card: oklch(1 0 0);
+  --card-foreground: var(--foreground);
+  --border: oklch(0.9 0.01 85);
+  --primary: var(--brand-primary);
+  --primary-foreground: oklch(0.985 0.006 85);
+  --accent: var(--brand-accent);
+  --accent-foreground: oklch(0.99 0 0);
+  --destructive: oklch(0.52 0.2 27);
+  --success: oklch(0.5 0.13 155);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.17 0.012 170);
+    --foreground: oklch(0.95 0.008 85);
+    --muted: oklch(0.24 0.012 170);
+    --muted-foreground: oklch(0.72 0.012 85);
+    --card: oklch(0.21 0.012 170);
+    --border: oklch(0.31 0.012 170);
+    --primary: color-mix(in oklch, var(--brand-primary) 45%, white);
+    --primary-foreground: oklch(0.16 0.012 170);
+    --accent: color-mix(in oklch, var(--brand-accent) 70%, white);
+    --accent-foreground: oklch(0.16 0.012 170);
+    --destructive: oklch(0.72 0.17 27);
+    --success: oklch(0.75 0.14 155);
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-display-face), ui-serif, Georgia, serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+}
+
+h1,
+h2,
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
