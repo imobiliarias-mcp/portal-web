@@ -3,6 +3,8 @@ import { Client } from "pg";
 import { serveCatalogFixtures } from "./catalog-fixtures";
 
 const SCREENSHOT_DIR = process.env.E2E_SCREENSHOT_DIR;
+/** Database the tested server uses; differs from DATABASE_URL when the server runs in a container. */
+const DATABASE_SETTING = process.env.E2E_DATABASE_URL ? "E2E_DATABASE_URL" : "DATABASE_URL";
 
 function requiredSetting(name: string): string {
   const value = process.env[name];
@@ -17,7 +19,7 @@ const admin = { email: requiredSetting("ADMIN_EMAIL"), password: requiredSetting
 
 /** Start from a user that has signed in before but has no advertiser profile or claims. */
 async function forgetAdvertiserProfile(): Promise<void> {
-  const client = new Client({ connectionString: requiredSetting("DATABASE_URL") });
+  const client = new Client({ connectionString: requiredSetting(DATABASE_SETTING) });
   await client.connect();
   try {
     await client.query('DELETE FROM advertiser_profile WHERE "userId" IN (SELECT id FROM "user" WHERE email = $1)', [
@@ -35,11 +37,6 @@ async function signIn(page: Page, account: { email: string; password: string }):
   await page.getByLabel("Senha").fill(account.password);
   await page.getByRole("button", { name: "Entrar", exact: true }).click();
   await expect(page.getByRole("button", { name: "Sair" })).toBeVisible();
-}
-
-async function signOut(page: Page): Promise<void> {
-  await page.getByRole("button", { name: "Sair" }).click();
-  await expect(page.getByRole("link", { name: "Sou imobiliária ou corretor" })).toBeVisible();
 }
 
 async function capture(page: Page, name: string): Promise<void> {
@@ -66,7 +63,10 @@ test("rejects a wrong password", async ({ page }) => {
   await expect(page.getByText("E-mail ou senha incorretos.")).toBeVisible();
 });
 
-test("an advertiser registers, claims a source, is approved and sees its listings", async ({ page }) => {
+test("an advertiser registers, claims a source, is approved and sees its listings", async ({ page, browser }) => {
+  // Two sessions side by side: signing in and out repeatedly would trip the sign-in rate limit.
+  const adminContext = await browser.newContext({ locale: "pt-BR" });
+  const adminPage = await adminContext.newPage();
   await serveCatalogFixtures(page);
 
   await signIn(page, advertiser);
@@ -99,21 +99,17 @@ test("an advertiser registers, claims a source, is approved and sees its listing
 
   await page.goto("/admin/reivindicacoes");
   await expect(page.getByText("404")).toBeVisible();
-  await page.goto("/painel");
-  await signOut(page);
 
-  await signIn(page, admin);
-  await page.goto("/admin/reivindicacoes");
-  const claim = page.getByRole("listitem").filter({ hasText: "Imobiliária de Teste" });
+  await signIn(adminPage, admin);
+  await adminPage.goto("/admin/reivindicacoes");
+  const claim = adminPage.getByRole("listitem").filter({ hasText: "Imobiliária de Teste" });
   await expect(claim.getByText("Em análise")).toBeVisible();
-  await capture(page, "portal-web-admin-reivindicacoes");
+  await capture(adminPage, "portal-web-admin-reivindicacoes");
   await claim.getByRole("button", { name: "Aprovar" }).click();
   await expect(claim.getByText("Aprovado")).toBeVisible();
-  await page.goto("/admin/anunciantes");
-  await expect(page.getByRole("row").filter({ hasText: "Imobiliária de Teste" })).toContainText("1");
-  await signOut(page);
+  await adminPage.goto("/admin/anunciantes");
+  await expect(adminPage.getByRole("row").filter({ hasText: "Imobiliária de Teste" })).toContainText("1");
 
-  await signIn(page, advertiser);
   await page.goto("/painel/meus-imoveis");
   await expect(page.getByRole("heading", { name: "cabralporto · todos os imóveis" })).toBeVisible();
   await expect(page.getByText("código 258")).toBeVisible();
@@ -123,17 +119,15 @@ test("an advertiser registers, claims a source, is approved and sees its listing
   await listing.getByLabel("O que está incorreto").fill("O valor do aluguel publicado está desatualizado.");
   await listing.getByRole("button", { name: "Enviar aviso" }).click();
   await expect(listing.getByText("Recebemos seu aviso.")).toBeVisible();
-  await signOut(page);
 
-  await signIn(page, admin);
-  await page.goto("/admin/reivindicacoes");
-  const approved = page.getByRole("listitem").filter({ hasText: "Imobiliária de Teste" }).first();
+  await adminPage.goto("/admin/reivindicacoes");
+  await expect(adminPage.getByText("O valor do aluguel publicado está desatualizado.")).toBeVisible();
+  const approved = adminPage.getByRole("listitem").filter({ hasText: "anunciante-e2e" });
   await approved.getByLabel("Motivo da decisão").fill("Contrato encerrado.");
   await approved.getByRole("button", { name: "Revogar vínculo" }).click();
   await expect(approved.getByText("Revogado")).toBeVisible();
-  await signOut(page);
 
-  await signIn(page, advertiser);
   await page.goto("/painel/meus-imoveis");
   await expect(page.getByText("Nenhum vínculo aprovado")).toBeVisible();
+  await adminContext.close();
 });
